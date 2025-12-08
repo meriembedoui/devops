@@ -9,7 +9,7 @@ pipeline {
         stage('Clone repository') {
             steps {
                 git branch: 'master',
-                    url: 'https://github.com/rounaaa/student.git'
+                    url: 'https://github.com/meriembedoui/devops.git'
             }
         }
         
