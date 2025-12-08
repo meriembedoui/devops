@@ -12,6 +12,11 @@ pipeline {
                     url: 'https://github.com/meriembedoui/devops.git'
             }
         }
+  stage('Build') {
+            steps {
+                sh 'mvn -B clean package'
+            }
+        }
         
    }   
 }
