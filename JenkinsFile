@@ -6,18 +6,21 @@ pipeline {
         jdk 'java'
     }
 
-    environment {
-        DOCKERHUB_CREDENTIALS = 'dockerhub'
-        IMAGE_NAME = 'student-management-oumaima'
-        DOCKERHUB_USER = 'lahouimeloumaima'
-        IMAGE_TAG = '1.0'
+  
+      environment {
+    DOCKERHUB_CREDENTIALS = 'dockerhub'       // ID in Jenkins
+    IMAGE_NAME = 'meriembedoui/student-management-app'
+    DOCKERHUB_USER = 'meriembedoui'
+    IMAGE_TAG = '1.0'
+
+
     }
 
     stages {
         stage('Clone repository') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/OumaimaHouimell/devopstwin.git'
+                    url: 'https://github.com/meriembedoui/devops.git'
             }
         }
         
@@ -27,20 +30,9 @@ pipeline {
             }
         }
 
-        stage('SonarQube') {
-            steps {
-                withCredentials([string(credentialsId: 'sonar-credentials', variable: 'SONAR_TOKEN')]) {
-                    withSonarQubeEnv('sonarqube') {
-                        sh """
-                            mvn sonar:sonar \
-                            -Dsonar.projectKey=devopstwin \
-                            -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.login=$SONAR_TOKEN
-                        """
-                    }
-                }
+     
             }
-        }
+        
 
         
         stage('Build Docker Image') {
@@ -75,22 +67,4 @@ pipeline {
             }
         }
     }
-    post {
-        success {
-            emailext(
-                to: "oumaimahouimel4@gmail.com",
-                subject: "SUCCESS ✔ Jenkins Pipeline",
-                body: "The pipeline succeeded!"
-            )
-        }
 
-        failure {
-            emailext(
-                to: "oumaimahouimel4@gmail.com",
-                subject: "FAILURE ❌ Jenkins Pipeline",
-                body: "The pipeline failed! Please check Jenkins."
-            )
-        }
-    }
-
-}
