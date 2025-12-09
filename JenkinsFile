@@ -2,46 +2,95 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven3'
-        jdk 'java17'
+        maven 'maven'
+        jdk 'java'
+    }
+
+    environment {
+        DOCKERHUB_CREDENTIALS = 'dockerhub'
+        IMAGE_NAME = 'student-management-oumaima'
+        DOCKERHUB_USER = 'lahouimeloumaima'
+        IMAGE_TAG = '1.0'
     }
 
     stages {
-
         stage('Clone repository') {
             steps {
-                git branch: 'master',
-                    url: 'https://github.com/meriembedoui/devops.git'
+                git branch: 'main',
+                    url: 'https://github.com/OumaimaHouimell/devopstwin.git'
             }
         }
-
-        stage('Build Maven (skip tests)') {
+        
+        stage('Build') {
             steps {
-                sh 'mvn -B clean package -DskipTests'
+                sh 'mvn -B clean package'
             }
         }
 
+        stage('SonarQube') {
+            steps {
+                withCredentials([string(credentialsId: 'sonar-credentials', variable: 'SONAR_TOKEN')]) {
+                    withSonarQubeEnv('sonarqube') {
+                        sh """
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=devopstwin \
+                            -Dsonar.host.url=$SONAR_HOST_URL \
+                            -Dsonar.login=$SONAR_TOKEN
+                        """
+                    }
+                }
+            }
+        }
+
+        
         stage('Build Docker Image') {
             steps {
-               
-               sh 'docker build -t student-management-app -f Dockerfile .'
-
+                sh "docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
-
-        stage('Archive Artifact') {
+        
+        stage('Push Docker Image') {
             steps {
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                withCredentials([usernamePassword(
+                    credentialsId: "${DOCKERHUB_CREDENTIALS}",
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+                        docker logout
+                    '''
+                }
+            }
+        }
+        
+        stage('Run Container') {
+            steps {
+                sh '''
+                    docker stop student-app 2>/dev/null || true
+                    docker rm student-app 2>/dev/null || true
+                    docker run -d --name student-app -p 8081:8080 ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
+                '''
             }
         }
     }
-
     post {
         success {
-            echo 'Pipeline terminé avec succès !'
+            emailext(
+                to: "oumaimahouimel4@gmail.com",
+                subject: "SUCCESS ✔ Jenkins Pipeline",
+                body: "The pipeline succeeded!"
+            )
         }
+
         failure {
-            echo 'Le pipeline a échoué.'
+            emailext(
+                to: "oumaimahouimel4@gmail.com",
+                subject: "FAILURE ❌ Jenkins Pipeline",
+                body: "The pipeline failed! Please check Jenkins."
+            )
         }
     }
+
 }
