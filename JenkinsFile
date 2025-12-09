@@ -6,12 +6,8 @@ pipeline {
         jdk 'java17'
     }
 
-    environment {
-        // Active le profil "test" pour utiliser H2 au lieu de MySQL
-        SPRING_PROFILES_ACTIVE = 'test'
-    }
-
     stages {
+
         stage('Clone repository') {
             steps {
                 git branch: 'master',
@@ -19,16 +15,20 @@ pipeline {
             }
         }
 
-        stage('Build & Test') {
+        stage('Build Maven (skip tests)') {
             steps {
-                // Build avec Maven, exécute les tests automatiquement
                 sh 'mvn -B clean package -DskipTests'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t student-management-app .'
             }
         }
 
         stage('Archive Artifact') {
             steps {
-                // Sauvegarde le jar généré comme artefact Jenkins
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
@@ -36,10 +36,10 @@ pipeline {
 
     post {
         success {
-            echo 'Build et tests réussis !'
+            echo 'Pipeline terminé avec succès !'
         }
         failure {
-            echo 'Le build ou les tests ont échoué.'
+            echo 'Le pipeline a échoué.'
         }
     }
 }
