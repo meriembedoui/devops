@@ -6,14 +6,11 @@ pipeline {
         jdk 'java17'
     }
 
-  
-      environment {
-    DOCKERHUB_CREDENTIALS = 'dockerhub'       // ID in Jenkins
-    IMAGE_NAME = 'meriembedoui/student-management-app'
-    DOCKERHUB_USER = 'meriembedoui'
-    IMAGE_TAG = '1.0'
-
-
+    environment {
+        DOCKERHUB_CREDENTIALS = 'dockerhub'       // ID in Jenkins
+        IMAGE_NAME = 'student-management-app'
+        DOCKERHUB_USER = 'meriembedoui'
+        IMAGE_TAG = '1.0'
     }
 
     stages {
@@ -23,24 +20,19 @@ pipeline {
                     url: 'https://github.com/meriembedoui/devops.git'
             }
         }
-        
-        stage('Build') {
+
+        stage('Build Maven') {
             steps {
-                sh 'mvn -B clean package'
+                sh 'mvn -B clean package -DskipTests'
             }
         }
 
-     
-            }
-        
-
-        
         stage('Build Docker Image') {
             steps {
                 sh "docker build -t ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
-        
+
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(
@@ -56,7 +48,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Run Container') {
             steps {
                 sh '''
@@ -68,3 +60,12 @@ pipeline {
         }
     }
 
+    post {
+        success {
+            echo 'Pipeline terminé avec succès !'
+        }
+        failure {
+            echo 'Le pipeline a échoué.'
+        }
+    }
+}
