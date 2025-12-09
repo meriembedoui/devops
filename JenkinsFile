@@ -23,8 +23,8 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                // On précise le chemin exact du Dockerfile
-                sh 'docker build -t student-management-app -f devops/DockerFile .'
+                // Dockerfile est dans src/
+                sh 'docker build -t student-management-app -f src/DockerFile .'
             }
         }
 
