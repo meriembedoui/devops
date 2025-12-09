@@ -5,6 +5,12 @@ pipeline {
         maven 'maven3'
         jdk 'java17'
     }
+
+    environment {
+        // Active le profil "test" pour utiliser H2 au lieu de MySQL
+        SPRING_PROFILES_ACTIVE = 'test'
+    }
+
     stages {
         stage('Clone repository') {
             steps {
@@ -12,11 +18,28 @@ pipeline {
                     url: 'https://github.com/meriembedoui/devops.git'
             }
         }
-  stage('Build') {
+
+        stage('Build & Test') {
             steps {
+                // Build avec Maven, exécute les tests automatiquement
                 sh 'mvn -B clean package'
             }
         }
-        
-   }   
+
+        stage('Archive Artifact') {
+            steps {
+                // Sauvegarde le jar généré comme artefact Jenkins
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build et tests réussis !'
+        }
+        failure {
+            echo 'Le build ou les tests ont échoué.'
+        }
+    }
 }
