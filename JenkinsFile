@@ -43,8 +43,8 @@ pipeline {
                 withCredentials([usernamePassword(
                     credentialsId: "${DOCKERHUB_CREDENTIALS}",
                     usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
+                    passwordVariable: 'DOCKER_PASS' )])
+{
                     sh '''
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                         docker push ${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}
@@ -54,35 +54,7 @@ pipeline {
             }
         }
 
-        stage('Deploy MySQL on Kubernetes') {
-            steps {
-                sh "kubectl apply -f k8s/mysql-deployment.yaml -n ${K8S_NAMESPACE}"
-                sh "kubectl rollout status deployment/mysql -n ${K8S_NAMESPACE}"
-            }
-        }
-
-        stage('Deploy Spring Boot on Kubernetes') {
-            steps {
-                sh "kubectl apply -f k8s/spring-deployment.yaml -n ${K8S_NAMESPACE}"
-                sh "kubectl rollout status deployment/spring-app -n ${K8S_NAMESPACE}"
-            }
-        }
-
-        stage('Verify Deployment') {
-            steps {
-                sh "kubectl get pods -n ${K8S_NAMESPACE}"
-                sh "kubectl get svc -n ${K8S_NAMESPACE}"
-                sh "minikube service spring-boot-service -n ${K8S_NAMESPACE} --url"
-            }
-        }
+    
     }
 
-    post {
-        success {
-            echo 'Pipeline terminé avec succès !'
-        }
-        failure {
-            echo 'Le pipeline a échoué.'
-        }
-    }
 }
